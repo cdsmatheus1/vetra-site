@@ -10,6 +10,10 @@
     // Leads are emailed through FormSubmit (free, no backend needed).
     // The very first submission sends an activation email to the address below —
     // click "Activate" once and every following lead arrives in your inbox.
+    // Preferred: Google Apps Script web app (branded email + WhatsApp + Google Sheet).
+    // Paste the web app URL here after deploying google-apps-script/Code.gs.
+    // While it is empty, leads go through FormSubmit below.
+    appsScriptUrl: '',
     endpoint: 'https://formsubmit.co/ajax/vetraservices25@gmail.com',
     // WhatsApp alert for every new lead, sent through CallMeBot (free).
     // Paste the API key CallMeBot sends you on WhatsApp below. While it is empty,
@@ -254,6 +258,27 @@
     return lines.join('\n');
   }
 
+  // Adds Portuguese labels (owner email/WhatsApp) and labels in the customer's language (confirmation email).
+  function scriptPayload(d) {
+    var lang = document.documentElement.lang || 'en';
+    var tr = function (l, v) { return window.VetraI18n ? window.VetraI18n.to(l, v) : v; };
+    var list = function (l, v) { return (v || '').split(', ').map(function (x) { return tr(l, x); }).join(', '); };
+    var out = Object.assign({}, d, {
+      lang: lang,
+      pt: {
+        client_type: tr('pt', d.client_type),
+        services: list('pt', d.services),
+        timeline: tr('pt', d.timeline),
+        property_type: tr('pt', d.property_type),
+        budget: tr('pt', d.budget),
+        preferred_contact: tr('pt', d.preferred_contact),
+        language: { English: 'inglês', Portuguese: 'português', Spanish: 'espanhol' }[d.language] || d.language
+      },
+      local: { services: list(lang, d.services), timeline: tr(lang, d.timeline) }
+    });
+    return out;
+  }
+
   function sendWhatsappAlert(d) {
     var cfg = CONFIG.whatsappAlert;
     if (!cfg || !cfg.apikey) return;
@@ -280,14 +305,27 @@
     });
     delete payload._honey;
 
-    sendWhatsappAlert(data);
+    var request;
+    if (CONFIG.appsScriptUrl) {
+      // Apps Script sends the branded email, the WhatsApp alert and saves the lead.
+      request = fetch(CONFIG.appsScriptUrl, {
+        method: 'POST',
+        body: JSON.stringify(scriptPayload(data))   // text/plain: no CORS preflight
+      }).then(function (r) {
+        return r.json().catch(function () { return {}; }).then(function (j) {
+          return { ok: r.ok && j.ok === true, j: j };
+        });
+      });
+    } else {
+      sendWhatsappAlert(data);
+      request = fetch(CONFIG.endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify(payload)
+      }).then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { return { ok: r.ok, j: j }; }); });
+    }
 
-    fetch(CONFIG.endpoint, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-      body: JSON.stringify(payload)
-    })
-      .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { return { ok: r.ok, j: j }; }); })
+    request
       .then(function (res) {
         if (!res.ok || String(res.j.success) === 'false') throw new Error(res.j.message || 'Send failed');
         done(data);

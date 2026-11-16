@@ -23,18 +23,25 @@ o visitante vê botões de WhatsApp / e-mail / ligação já preenchidos com os 
 Links diretos para o formulário já com serviço/cliente marcado (bons para anúncios e Instagram):
 `quote.html?type=builder`, `quote.html?type=homeowner`, `quote.html?service=cctv`, `?service=automation`, `?service=handyman`…
 
-## Aviso de novo pedido no WhatsApp
-Cada pedido feito no formulário chega no email **e** pode chegar como mensagem no seu WhatsApp
-(689) 248-7410, com todos os dados em português e um link "Responder no WhatsApp" que abre a conversa com o cliente.
-O envio usa o CallMeBot, um serviço gratuito. Para ativar (uma vez só):
-1. Acesse callmebot.com, abra a página **WhatsApp API** e siga as instruções de ativação
-   (adicionar o número deles nos contatos e mandar a mensagem de autorização pelo WhatsApp).
-2. Você recebe uma **apikey** no WhatsApp.
-3. Abra `assets/main.js`, procure `apikey: ''` e cole a chave entre as aspas. Exemplo: `apikey: '123456'`.
-4. Publique o site de novo e faça um pedido de teste.
+## Email bonito e WhatsApp (Google Apps Script)
+O script `google-apps-script/Code.gs` roda grátis na conta Google **vetraservices25@gmail.com**. A cada pedido ele:
+1. manda para você um email com a identidade visual da Vetra e botões "Responder no WhatsApp", "Ligar" e "Responder por email";
+2. manda um WhatsApp para (689) 248-7410 com o resumo do pedido;
+3. manda ao cliente um email de confirmação no idioma dele;
+4. guarda o pedido na planilha "Vetra Leads" no seu Google Drive.
 
-Enquanto a chave estiver vazia, o site não manda o aviso no WhatsApp (os pedidos continuam chegando por email).
-A chave fica visível no código do site; ela só serve para mandar mensagens para o seu próprio número.
+**Instalar (uma vez):**
+1. Entre em script.google.com logado como vetraservices25@gmail.com e clique em **Novo projeto**.
+2. Apague o código de exemplo, cole todo o conteúdo de `google-apps-script/Code.gs` e salve.
+3. WhatsApp: no callmebot.com (página WhatsApp API) pegue a sua apikey. No Apps Script, vá em
+   **Configurações do projeto → Propriedades do script → Adicionar propriedade**: nome `WHATSAPP_APIKEY`, valor = a chave.
+4. Teste: selecione a função `testLead` no topo e clique em **Executar**. Autorize o acesso quando o Google pedir.
+   Devem chegar o email de teste, o WhatsApp e a planilha.
+5. Publique: **Implantar → Nova implantação → tipo App da Web**. Executar como: **Eu**. Quem pode acessar: **Qualquer pessoa**.
+   Copie a URL que termina em `/exec`.
+6. Cole essa URL em `assets/main.js`, no campo `appsScriptUrl: ''`, e publique o site.
+
+Sem a URL configurada, o site continua mandando os pedidos pelo FormSubmit (email simples).
 
 ## Idiomas
 Inglês é o padrão. O visitante troca no seletor EN | PT | ES do cabeçalho (fica salvo no navegador).
