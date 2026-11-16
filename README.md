@@ -26,15 +26,15 @@ Links diretos para o formulário já com serviço/cliente marcado (bons para an�
 ## Email bonito e WhatsApp (Google Apps Script)
 O script `google-apps-script/Code.gs` roda grátis na conta Google **vetraservices25@gmail.com**. A cada pedido ele:
 1. manda para você um email com a identidade visual da Vetra e botões "Responder no WhatsApp", "Ligar" e "Responder por email";
-2. manda um WhatsApp para (689) 248-7410 com o resumo do pedido;
+2. manda um WhatsApp para (689) 248-7410 com o resumo do pedido (API oficial da Meta);
 3. manda ao cliente um email de confirmação no idioma dele;
 4. guarda o pedido na planilha "Vetra Leads" no seu Google Drive.
 
 **Instalar (uma vez):**
 1. Entre em script.google.com logado como vetraservices25@gmail.com e clique em **Novo projeto**.
 2. Apague o código de exemplo, cole todo o conteúdo de `google-apps-script/Code.gs` e salve.
-3. WhatsApp: no callmebot.com (página WhatsApp API) pegue a sua apikey. No Apps Script, vá em
-   **Configurações do projeto → Propriedades do script → Adicionar propriedade**: nome `WHATSAPP_APIKEY`, valor = a chave.
+3. WhatsApp: siga `google-apps-script/WHATSAPP-META.md` (API oficial do WhatsApp) e coloque `WA_TOKEN` e
+   `WA_PHONE_NUMBER_ID` em **Configurações do projeto → Propriedades do script**.
 4. Teste: selecione a função `testLead` no topo e clique em **Executar**. Autorize o acesso quando o Google pedir.
    Devem chegar o email de teste, o WhatsApp e a planilha.
 5. Publique: **Implantar → Nova implantação → tipo App da Web**. Executar como: **Eu**. Quem pode acessar: **Qualquer pessoa**.

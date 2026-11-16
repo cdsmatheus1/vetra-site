@@ -9,7 +9,13 @@
  *
  * Setup: see README.md, section "Email bonito e WhatsApp".
  * Script properties (Project Settings > Script properties):
- *   WHATSAPP_APIKEY   CallMeBot API key (optional; no WhatsApp alert without it)
+ *   WA_TOKEN            Meta permanent access token (system user)
+ *   WA_PHONE_NUMBER_ID  Phone number ID shown in Meta > WhatsApp > API Setup
+ *   WA_TO               (optional) number that receives alerts, default 16892487410
+ *   WA_TEMPLATE         (optional) approved template name, default novo_orcamento
+ *   WA_TEMPLATE_LANG    (optional) template language code, default pt_BR
+ *   WHATSAPP_APIKEY     (optional) CallMeBot key, used only if the Meta settings are empty
+ * Without any of these, everything works except the WhatsApp alert.
  */
 
 var SETTINGS = {
@@ -88,11 +94,50 @@ function sendCustomerEmail(d) {
 }
 
 function sendWhatsapp(d) {
-  var key = PropertiesService.getScriptProperties().getProperty('WHATSAPP_APIKEY');
+  var props = PropertiesService.getScriptProperties();
+  var token = props.getProperty('WA_TOKEN');
+  var phoneId = props.getProperty('WA_PHONE_NUMBER_ID');
+  if (token && phoneId) return sendWhatsappMeta(d, props, token, phoneId);
+
+  var key = props.getProperty('WHATSAPP_APIKEY');            // CallMeBot fallback
   if (!key) return;
   var url = 'https://api.callmebot.com/whatsapp.php?phone=' + encodeURIComponent(SETTINGS.ownerWhatsapp) +
     '&text=' + encodeURIComponent(buildWhatsappText(d)) + '&apikey=' + encodeURIComponent(key);
   UrlFetchApp.fetch(url, { muteHttpExceptions: true });
+}
+
+/* Official WhatsApp Cloud API (Meta). Sends the approved template "novo_orcamento". */
+function sendWhatsappMeta(d, props, token, phoneId) {
+  var pt = d.pt || {};
+  // Template variables cannot contain line breaks, tabs or long runs of spaces.
+  var v = function (x) { return String(clean(x) || '-').replace(/[\r\n\t]+/g, ' ').replace(/ {2,}/g, ' ').slice(0, 300); };
+  var params = [
+    d.name + (clean(d.company) ? ' (' + d.company + ')' : ''),
+    d.phone,
+    pt.services || d.services,
+    d.city_zip,
+    pt.timeline || d.timeline,
+    'https://wa.me/' + phoneDigits(d.phone)
+  ].map(function (x) { return { type: 'text', text: v(x) }; });
+
+  var body = {
+    messaging_product: 'whatsapp',
+    to: (props.getProperty('WA_TO') || SETTINGS.ownerWhatsapp).replace(/\D/g, ''),
+    type: 'template',
+    template: {
+      name: props.getProperty('WA_TEMPLATE') || 'novo_orcamento',
+      language: { code: props.getProperty('WA_TEMPLATE_LANG') || 'pt_BR' },
+      components: [{ type: 'body', parameters: params }]
+    }
+  };
+  var res = UrlFetchApp.fetch('https://graph.facebook.com/v23.0/' + phoneId + '/messages', {
+    method: 'post',
+    contentType: 'application/json',
+    headers: { Authorization: 'Bearer ' + token },
+    payload: JSON.stringify(body),
+    muteHttpExceptions: true
+  });
+  if (res.getResponseCode() >= 300) throw new Error('WhatsApp API ' + res.getResponseCode() + ': ' + res.getContentText());
 }
 
 function saveToSheet(d) {
@@ -321,4 +366,14 @@ function testLead() {
   };
   var res = doPost({ postData: { contents: JSON.stringify(sample) } });
   Logger.log(res.getContent());
+}
+
+/* Run from the editor to test only the WhatsApp alert. */
+function testWhatsapp() {
+  sendWhatsapp({
+    name: 'Cliente Teste', phone: '(407) 555-0123', email: 'teste@exemplo.com', company: '',
+    services: 'CCTV / security cameras', city_zip: 'Orlando', timeline: 'Within 2 weeks', details: '',
+    pt: { services: 'CFTV e câmeras de segurança', timeline: 'Em até 2 semanas' }
+  });
+  Logger.log('WhatsApp enviado. Confira o celular.');
 }
