@@ -13,7 +13,7 @@
     // Preferred: Google Apps Script web app (branded email + WhatsApp + Google Sheet).
     // Paste the web app URL here after deploying google-apps-script/Code.gs.
     // While it is empty, leads go through FormSubmit below.
-    appsScriptUrl: '',
+    appsScriptUrl: 'https://script.google.com/macros/s/AKfycbwsdxos200QAvDdoqbPIyzfwavVkovwguXbIL817f4i2WdNFw7ht32s430ISYSjJckdTA/exec',
     endpoint: 'https://formsubmit.co/ajax/vetraservices25@gmail.com',
     // WhatsApp alert for every new lead, sent through CallMeBot (free).
     // Paste the API key CallMeBot sends you on WhatsApp below. While it is empty,
